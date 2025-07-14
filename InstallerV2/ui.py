@@ -5,7 +5,7 @@ from tkinter import ttk, messagebox, filedialog
 from config import App_Name, App_Desc, output_exe, desktop_shortcut_option_show, startmenu_shortcut_option_show, add_to_path_option_show
 from utils import check_admin, create_desktop_shortcut, create_startmenu_shortcut
 from installer import unpack_data_files, add_to_path
-
+import threading
 
 class ModernInstallerUI(tk.Tk):
     def __init__(self):
@@ -178,7 +178,6 @@ class ModernInstallerUI(tk.Tk):
         
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(status_section, variable=self.progress_var, mode='indeterminate')
-        self.progress_bar.pack(fill="x", pady=(10, 0))
         self.progress_bar.pack_forget()
 
     def create_footer(self, parent):
@@ -200,14 +199,8 @@ class ModernInstallerUI(tk.Tk):
         if folder:
             self.path_var.set(folder)
 
-    def update_status(self, message, show_progress=False):
+    def update_status(self, message):
         self.status_var.set(message)
-        if show_progress:
-            self.progress_bar.pack(fill="x", pady=(10, 0))
-            self.progress_bar.start(10)
-        else:
-            self.progress_bar.stop()
-            self.progress_bar.pack_forget()
         self.update_idletasks()
 
     def show_success_message(self, install_path):
@@ -260,8 +253,8 @@ class ModernInstallerUI(tk.Tk):
         error_label.pack(pady=(0, 15))
         
         info_label = ttk.Label(content, text=message, 
-                              style="Modern.TLabel", justify="center", wraplength=390)
-        info_label.pack(pady=(0, 25))
+                               style="Modern.TLabel", justify="left", wraplength=400)
+        info_label.pack(pady=(0, 20))
         
         ok_btn = ttk.Button(content, text="OK", command=error_window.destroy, style="Primary.TButton")
         ok_btn.pack()
@@ -278,54 +271,58 @@ class ModernInstallerUI(tk.Tk):
             return
 
         self.install_btn.config(state="disabled")
-        self.update_status("Initializing installation...", show_progress=True)
 
-        if os.path.exists(install_path):
-            self.update_status("Removing existing installation...", show_progress=True)
+        self.progress_bar.pack(fill="x", pady=(10, 0))
+        self.progress_bar.start(10)
+
+        self.update_status("Installation started...")
+
+        def run_install():
             try:
-                shutil.rmtree(install_path)
-                self.update_status("Existing installation removed", show_progress=True)
+                if os.path.exists(install_path):
+                    self.update_status("Removing existing installation...")
+                    shutil.rmtree(install_path)
+
+                os.makedirs(install_path, exist_ok=True)
+
+                if not unpack_data_files(install_path, self.update_status):
+                    self.after(0, lambda: self.show_error_message("Installation Error", "Failed to unpack data files. Make sure .5xdata files are present."))
+                    return
+
+                if self.add_path_var.get():
+                    self.update_status("Adding to system PATH...")
+                    result = add_to_path(install_path)
+                    if result is not True:
+                        self.update_status(f"Warning: Could not add to PATH: {result}")
+                    else:
+                        self.update_status("Added to system PATH")
+
+                if self.desktop_shortcut_var.get():
+                    self.update_status("Creating desktop shortcut...")
+                    result = create_desktop_shortcut(install_path, App_Name, output_exe)
+                    if result is not True:
+                        self.update_status(f"Warning: Could not create desktop shortcut: {result}")
+
+                if self.startmenu_shortcut_var.get():
+                    self.update_status("Creating start menu shortcut...")
+                    result = create_startmenu_shortcut(install_path, App_Name, output_exe)
+                    if result is not True:
+                        self.update_status(f"Warning: Could not create start menu shortcut: {result}")
+
+                self.after(0, lambda: self.update_status("Installation completed successfully!"))
+                self.after(0, lambda: self.show_success_message(install_path))
+
             except Exception as e:
-                self.show_error_message("Installation Error", f"Failed to remove existing folder:\n{e}")
-                self.install_btn.config(state="normal")
-                self.update_status("Installation failed")
-                return
+                self.after(0, lambda: self.show_error_message("Installation Error", str(e)))
 
-        try:
-            os.makedirs(install_path, exist_ok=True)
-        except Exception as e:
-            self.show_error_message("Installation Error", f"Failed to create installation directory:\n{e}")
-            self.install_btn.config(state="normal")
-            self.update_status("Installation failed")
-            return
+            finally:
+                self.after(0, lambda: self.install_btn.config(state="normal"))
+                self.after(0, lambda: self.progress_bar.stop())
+                self.after(0, lambda: self.progress_bar.pack_forget())
 
-        if not unpack_data_files(install_path, self.update_status):
-            self.show_error_message("Installation Error", "Failed to unpack data files. Make sure .5xdata files are present.")
-            self.install_btn.config(state="normal")
-            self.update_status("Installation failed")
-            return
+        threading.Thread(target=run_install, daemon=True).start()
 
-        if self.add_path_var.get():
-            self.update_status("Adding to system PATH...", show_progress=True)
-            result = add_to_path(install_path)
-            if result is not True:
-                self.update_status(f"Warning: Could not add to PATH: {result}", show_progress=True)
-            else:
-                self.update_status("Added to system PATH", show_progress=True)
 
-        if self.desktop_shortcut_var.get():
-            self.update_status("Creating desktop shortcut...", show_progress=True)
-            result = create_desktop_shortcut(install_path, App_Name, output_exe)
-            if result is not True:
-                self.update_status(f"Warning: Could not create desktop shortcut: {result}", show_progress=True)
-
-        if self.startmenu_shortcut_var.get():
-            self.update_status("Creating start menu shortcut...", show_progress=True)
-            result = create_startmenu_shortcut(install_path, App_Name, output_exe)
-            if result is not True:
-                self.update_status(f"Warning: Could not create start menu shortcut: {result}", show_progress=True)
-
-        self.update_status("Installation completed successfully!")
-        self.show_success_message(install_path)
-        self.install_btn.config(state="normal")
-
+if __name__ == "__main__":
+    app = ModernInstallerUI()
+    app.mainloop()
