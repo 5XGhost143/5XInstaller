@@ -51,6 +51,14 @@ def main():
             print(f"Copied main.exe to {build_folder}")
         else:
             print(f"No main.exe found in {installer_dist_folder}")
+
+        ico_src = os.path.join(installer_dist_folder, 'ico')
+        ico_dst = os.path.join(build_folder, 'ico')
+        if os.path.exists(ico_src) and os.path.isdir(ico_src):
+            shutil.copytree(ico_src, ico_dst)
+            print(f"Copied 'ico' folder to {build_folder}")
+        else:
+            print(f"No 'ico' folder found in {installer_dist_folder}")
     else:
         print(f"Folder {installer_dist_folder} does not exist ❌")
 
