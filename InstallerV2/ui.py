@@ -207,6 +207,7 @@ class ModernInstallerUI(tk.Tk):
     def show_success_message(self, install_path):
         success_window = tk.Toplevel(self)
         success_window.title("Installation Complete")
+        success_window.iconbitmap('ico/installer.ico')
         success_window.geometry("400x200")
         success_window.configure(bg="#0f0f0f")
         success_window.resizable(False, False)
@@ -235,6 +236,7 @@ class ModernInstallerUI(tk.Tk):
     def show_error_message(self, title, message):
         error_window = tk.Toplevel(self)
         error_window.title(title)
+        error_window.iconbitmap('ico/installer.ico')
         error_window.geometry("450x200")
         error_window.configure(bg="#0f0f0f")
         error_window.resizable(False, False)
