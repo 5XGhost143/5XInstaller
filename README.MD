@@ -2,7 +2,11 @@
 
 **WINDOWS ONLY**
 
-**Version 1.2.0**
+**Version 1.2.5**
+
+UPDATES:
+
+- Updated Icon
 
 **Setup:**
 
