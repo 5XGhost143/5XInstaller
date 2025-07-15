@@ -4,6 +4,12 @@
 
 **Version 1.2.5**
 
+# DISCLAIMER
+
+**This software is provided "as-is," without any express or implied warranty. The author is not responsible for any damages, misuse, or illegal activities resulting from the use of this installer.**
+
+#
+
 UPDATES:
 
 - Updated Icon
