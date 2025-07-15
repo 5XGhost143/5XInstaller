@@ -22,7 +22,7 @@
 
 8. configure (NOTE: don't change EXTENSION, HEADER_FORMAT, HEADER_SIZE unless u know what are u doing)... 
 
-9. Build the Installer with pyinstaller COMMAND: pyinstaller --onefile --noconsole main.py or the .bat (if it's detected as a Virus maybe use a different builder which has noconsole function and onefile and just name it main.exe OR u just let it sign for too much money)
+9. Build the Installer with pyinstaller COMMAND: pyinstaller --onefile --noconsole main.py or the .bat (if it's detected as a Virus maybe use a different builder which has noconsole function and onefile and just name it main.exe OR u just let it sign for too much money it should be abt 99€ - 200€)
 
 10. go into root again..
 
