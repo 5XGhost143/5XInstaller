@@ -11,6 +11,7 @@ class ModernInstallerUI(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title(App_Name + " Installer")
+        self.iconbitmap('ico/installer.ico')
         self.geometry("700x600")
         self.resizable(False, False)
         self.configure(bg="#0f0f0f")
