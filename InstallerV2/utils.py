@@ -85,3 +85,30 @@ def create_startmenu_shortcut(install_path, app_name, output_exe):
 
     except Exception as e:
         return f"Error creating Start Menu shortcut: {str(e)}\n\n{traceback.format_exc()}"
+        
+def create_autostart_entry(install_path, app_name, output_exe):
+    try:
+        exe_path = os.path.join(os.path.normpath(install_path), output_exe)
+        if not os.path.isfile(exe_path):
+            return f"EXE not found: {exe_path}"
+        
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+                            0, winreg.KEY_SET_VALUE)
+        
+        winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, exe_path)
+        winreg.CloseKey(key)
+        return True
+    except Exception as e:
+        return f"Error creating autostart entry: {str(e)}"
+
+def remove_autostart_entry(app_name):
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+                            0, winreg.KEY_SET_VALUE)
+        winreg.DeleteValue(key, app_name)
+        winreg.CloseKey(key)
+        return True
+    except Exception as e:
+        return str(e)
