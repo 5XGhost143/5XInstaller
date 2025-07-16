@@ -2,8 +2,8 @@ import os
 import shutil
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from config import App_Name, App_Desc, output_exe, desktop_shortcut_option_show, startmenu_shortcut_option_show, add_to_path_option_show
-from utils import check_admin, create_desktop_shortcut, create_startmenu_shortcut
+from config import App_Name, App_Desc, output_exe, desktop_shortcut_option_show, startmenu_shortcut_option_show, add_to_path_option_show, autostart_option_show
+from utils import check_admin, create_desktop_shortcut, create_startmenu_shortcut, create_autostart_entry
 from installer import unpack_data_files, add_to_path
 import threading
 
@@ -169,6 +169,16 @@ class ModernInstallerUI(tk.Tk):
             startmenu_checkbox.pack(anchor="w", padx=(20, 0))
         else:
             self.startmenu_shortcut_var = tk.BooleanVar(value=False)
+            
+        if autostart_option_show:
+            self.autostart_var = tk.BooleanVar(value=True)
+            autostart_checkbox = ttk.Checkbutton(options_section,
+                                   text="Start with Windows (Auto-start)",
+                                   variable=self.autostart_var,
+                                   style="Modern.TCheckbutton")
+            autostart_checkbox.pack(anchor="w", padx=(20, 0))
+        else:
+            self.autostart_var = tk.BooleanVar(value=False)
         
         status_section = tk.Frame(content_frame, bg="#0f0f0f")
         status_section.pack(fill="x", pady=(20, 0))
@@ -311,6 +321,12 @@ class ModernInstallerUI(tk.Tk):
                     result = create_startmenu_shortcut(install_path, App_Name, output_exe)
                     if result is not True:
                         self.update_status(f"Warning: Could not create start menu shortcut: {result}")
+                        
+                if self.autostart_var.get():
+                    self.update_status("Adding to Windows startup...")
+                    result = create_autostart_entry(install_path, App_Name, output_exe)
+                    if result is not True:
+                        self.update_status(f"Warning: Could not add to startup: {result}")                
 
                 self.after(0, lambda: self.update_status("Installation completed successfully!"))
                 self.after(0, lambda: self.show_success_message(install_path))
