@@ -1,7 +1,7 @@
 import os
 import shutil
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox, filedialog, scrolledtext
 from config import App_Name, App_Desc, output_exe, desktop_shortcut_option_show, startmenu_shortcut_option_show, add_to_path_option_show, autostart_option_show
 from utils import check_admin, create_desktop_shortcut, create_startmenu_shortcut, create_autostart_entry
 from installer import unpack_data_files, add_to_path
@@ -82,6 +82,18 @@ class ModernInstallerUI(tk.Tk):
                  background=[('active', '#106ebe'),
                             ('pressed', '#005a9e'),
                             ('disabled', '#404040')])
+        
+        style.configure("Danger.TButton",
+                       background="#d13438",
+                       foreground="#ffffff",
+                       borderwidth=0,
+                       focuscolor="none",
+                       font=("Segoe UI", 12),
+                       padding=(20, 10))
+        
+        style.map("Danger.TButton",
+                 background=[('active', '#b02a2e'),
+                            ('pressed', '#9e2528')])
         
         style.configure("Modern.TEntry",
                        fieldbackground="#1a1a1a",
@@ -214,6 +226,92 @@ class ModernInstallerUI(tk.Tk):
         self.status_var.set(message)
         self.update_idletasks()
 
+    def load_license_text(self):
+        try:
+            with open('LICENSE_Text.txt', 'r', encoding='utf-8') as file:
+                return file.read()
+        except FileNotFoundError:
+            return "LICENSE_Text.txt file not found. Please ensure the license file is present."
+        except Exception as e:
+            return f"Error loading license text: {str(e)}"
+
+    def show_license_agreement(self, callback):
+        license_window = tk.Toplevel(self)
+        license_window.title("License Agreement")
+        license_window.iconbitmap('ico/installer.ico')
+        license_window.geometry("650x700")
+        license_window.configure(bg="#0f0f0f")
+        license_window.resizable(False, False)
+        license_window.transient(self)
+        license_window.grab_set()
+        
+        license_window.update_idletasks()
+        x = (license_window.winfo_screenwidth() // 2) - (600 // 2)
+        y = (license_window.winfo_screenheight() // 2) - (500 // 2)
+        license_window.geometry(f'650x700+{x}+{y}')
+        
+        main_container = tk.Frame(license_window, bg="#0f0f0f")
+        main_container.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        header_label = ttk.Label(main_container, text="License Agreement", 
+                                style="Title.TLabel", font=("Segoe UI", 18, "bold"))
+        header_label.pack(pady=(0, 10))
+        
+        info_label = ttk.Label(main_container, 
+                              text="Please read the following license agreement carefully.", 
+                              style="Subtitle.TLabel")
+        info_label.pack(pady=(0, 15))
+        
+        text_frame = tk.Frame(main_container, bg="#0f0f0f")
+        text_frame.pack(fill="both", expand=True, pady=(0, 20))
+        
+        license_text = scrolledtext.ScrolledText(
+            text_frame,
+            wrap=tk.WORD,
+            bg="#1a1a1a",
+            fg="#e0e0e0",
+            font=("Consolas", 9),
+            relief="flat",
+            borderwidth=1,
+            insertbackground="#ffffff",
+            selectbackground="#0078d4",
+            selectforeground="#ffffff"
+        )
+        license_text.pack(fill="both", expand=True)
+        
+        license_content = self.load_license_text()
+        license_text.insert(tk.END, license_content)
+        license_text.config(state=tk.DISABLED)
+        
+        button_frame = tk.Frame(main_container, bg="#0f0f0f")
+        button_frame.pack(fill="x")
+        
+        separator = tk.Frame(button_frame, height=1, bg="#2d2d2d")
+        separator.pack(fill="x", pady=(0, 15))
+        
+        button_container = tk.Frame(button_frame, bg="#0f0f0f")
+        button_container.pack(fill="x")
+        
+        def on_disagree():
+            license_window.destroy()
+            callback(False)
+        
+        def on_agree():
+            license_window.destroy()
+            callback(True)
+        
+        disagree_btn = ttk.Button(button_container, text="Disagree", 
+                                 command=on_disagree, style="Danger.TButton")
+        disagree_btn.pack(side="left", padx=(0, 10))
+        
+        agree_btn = ttk.Button(button_container, text="Agree", 
+                              command=on_agree, style="Primary.TButton")
+        agree_btn.pack(side="right")
+        
+        license_window.bind('<Return>', lambda e: on_agree())
+        license_window.bind('<Escape>', lambda e: on_disagree())
+        license_window.focus_set()
+
     def show_success_message(self, install_path):
         success_window = tk.Toplevel(self)
         success_window.title("Installation Complete")
@@ -277,12 +375,22 @@ class ModernInstallerUI(tk.Tk):
         if not install_path:
             self.show_error_message("Invalid Path", "Please specify an installation path.")
             return
-
         if not check_admin():
             self.show_error_message("Administrator Required", 
                                    "Administrator privileges are required.\nPlease run this installer as Administrator.")
             return
 
+        def license_callback(agreed):
+            if not agreed:
+                self.update_status("Installation cancelled by user.")
+                return
+            
+            self.proceed_with_installation(install_path)
+
+        self.show_license_agreement(license_callback)
+
+    def proceed_with_installation(self, install_path):
+        """Führt die eigentliche Installation durch, nachdem der Lizenz zugestimmt wurde"""
         self.install_btn.config(state="disabled")
 
         self.progress_bar.pack(fill="x", pady=(10, 0))
@@ -299,7 +407,7 @@ class ModernInstallerUI(tk.Tk):
                 os.makedirs(install_path, exist_ok=True)
 
                 if not unpack_data_files(install_path, self.update_status):
-                    self.after(0, lambda: self.show_error_message("Installation Error", "Failed to unpack data files. Make sure .5xdata files are present."))
+                    self.after(0, lambda: self.show_error_message("Installation Error", "Failed to unpack data files. Make sure .bin files are present."))
                     return
 
                 if self.add_path_var.get():
