@@ -2,7 +2,7 @@
 
 **WINDOWS ONLY**
 
-**Version 1.3.0**
+**Version 1.3.5**
 
 # DISCLAIMER
 
@@ -12,9 +12,11 @@
 
 UPDATES:
 
-- Updated Icon
+- Updated Icon (added 1.3.0)
 
-- Added Autostart
+- Added Autostart (added 1.3.0)
+
+- LICENSE Agreement (added 1.3.5)
 
 **Setup:**
 
